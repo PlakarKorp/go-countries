@@ -68,25 +68,36 @@ func main() {
 	out := flag.String("o", "countries_data.go", "file to write")
 	flag.Parse()
 
-	data, err := read(*source)
+	n, err := generate(*source, *out)
 	if err != nil {
 		log.Fatal(err)
+	}
+	fmt.Printf("wrote %d countries to %s\n", n, *out)
+}
+
+// generate reads source, renders the table and writes it to out, returning the
+// number of countries written. main is left holding nothing but the flags so
+// that the whole pipeline is reachable from a test.
+func generate(source, out string) (int, error) {
+	data, err := read(source)
+	if err != nil {
+		return 0, err
 	}
 
 	countries, err := parse(data)
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
 
 	src, err := render(countries)
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
 
-	if err := os.WriteFile(*out, src, 0o644); err != nil {
-		log.Fatal(err)
+	if err := os.WriteFile(out, src, 0o644); err != nil {
+		return 0, err
 	}
-	fmt.Printf("wrote %d countries to %s\n", len(countries), *out)
+	return len(countries), nil
 }
 
 // read returns the bytes of source, which is a URL when it looks like one and

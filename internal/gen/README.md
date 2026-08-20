@@ -24,3 +24,13 @@ EU and EEA membership live in `main.go`, because they are political facts
 rather than ISO ones and the CSV does not carry them. The generator checks
 their cardinality and the package tests check it again (27 and 30), so a bad
 edit fails rather than shipping.
+
+The generator has its own tests, which build small CSV sources in memory and
+serve them over `httptest` rather than reaching for the network:
+
+    go test ./internal/gen/
+
+`main` itself is not covered -- it is flag parsing and `log.Fatal` -- and
+neither are the two guards on the membership list sizes, which can only fire
+if the lists in this file are edited wrongly and which `TestMembershipListsAreTheRightSize`
+asserts directly instead.
