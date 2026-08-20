@@ -32,7 +32,5 @@ jobs:
 
       - name: data is reproducible
         run: |
-          curl -sLo /tmp/all.csv https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv
-          python3 internal/gen/gen.py /tmp/all.csv /tmp/countries_data.go
-          gofmt -w /tmp/countries_data.go
+          go run ./internal/gen -o /tmp/countries_data.go
           diff /tmp/countries_data.go countries_data.go

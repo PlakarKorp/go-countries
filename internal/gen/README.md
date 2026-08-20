@@ -5,12 +5,22 @@
 
     https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes
 
-To regenerate after an ISO revision:
+To regenerate after an ISO revision, from the repository root:
 
-    curl -sLo all.csv https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv
-    python3 gen.py all.csv ../../countries_data.go
-    cd ../.. && gofmt -w countries_data.go && go test ./...
+    go generate ./...
+    go test ./...
 
-The EU and EEA membership sets live in `gen.py`, because they are political
-facts rather than ISO ones and the CSV does not carry them. `go test` checks
-their cardinality (27 and 30), so a bad edit there fails rather than shipping.
+That fetches the current upstream CSV. To regenerate from a local copy
+instead, which is what you want when reviewing a change to the data:
+
+    go run ./internal/gen -source all.csv -o countries_data.go
+
+The output is formatted with `go/format`, so there is no gofmt step, and the
+generator fails rather than writing a table it cannot vouch for: an unknown
+region, a duplicate country, a missing column, or a membership entry naming a
+country the source does not list.
+
+EU and EEA membership live in `main.go`, because they are political facts
+rather than ISO ones and the CSV does not carry them. The generator checks
+their cardinality and the package tests check it again (27 and 30), so a bad
+edit fails rather than shipping.

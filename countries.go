@@ -11,6 +11,8 @@
 // so callers do not have to normalise before asking.
 package countries
 
+//go:generate go run ./internal/gen -o countries_data.go
+
 import "strings"
 
 // Region is a UN M49 top-level region.
