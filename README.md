@@ -4,7 +4,7 @@
 
 # go-countries
 
-**The ISO 3166-1 country list and the groupings that decide where data is allowed to live.**
+**ISO country names and codes for Go — and the groupings that decide where data is allowed to live.**
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/PlakarKorp/go-countries.svg)](https://pkg.go.dev/github.com/PlakarKorp/go-countries)
 [![Go Report Card](https://goreportcard.com/badge/github.com/PlakarKorp/go-countries)](https://goreportcard.com/report/github.com/PlakarKorp/go-countries)
