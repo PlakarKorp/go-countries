@@ -5,15 +5,22 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
         with:
-          go-version: stable
+          fetch-depth: 2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
 
       - name: gofmt
         run: |
@@ -27,8 +34,50 @@ jobs:
       - name: vet
         run: go vet ./...
 
+      # Run the tests producing both a coverage profile (for Codecov coverage)
+      # and a JUnit XML (for Codecov Test Analytics). go-junit-report converts
+      # `go test -json` output into JUnit, and is installed rather than added to
+      # go.mod so the library keeps having no dependencies at all.
+      #
+      # A test failure must not abort the job, or the upload steps below would
+      # be skipped and we would lose the results that explain the failure.
+      # continue-on-error plus an explicit exit captures the outcome for the
+      # final step to re-surface.
       - name: test
-        run: go test -race -cover ./...
+        id: gotest
+        continue-on-error: true
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          set -o pipefail
+          go test -race -coverprofile=coverage.out -covermode=atomic -timeout 5m -json ./... \
+            | "$(go env GOPATH)/bin/go-junit-report" -parser gojson -set-exit-code > junit.xml
+          status=$?
+          echo "test_exit=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          # Tokenless upload works for public repos; the token is used when the
+          # CODECOV_TOKEN secret is present (required for private repos and to
+          # avoid tokenless rate limits).
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          fail_ci_if_error: false
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit.xml
+          report_type: test_results
+          fail_ci_if_error: false
+
+      # Surface a genuine test failure now that the results have been uploaded.
+      - name: Fail if tests failed
+        if: ${{ steps.gotest.outputs.test_exit != '0' }}
+        run: exit 1
 
       - name: data is reproducible
         run: |

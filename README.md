@@ -1,9 +1,14 @@
+<p align="center">
+  <img src="docs/banner.png" alt="go-countries — ISO Country Names &amp; Codes for Go" width="100%">
+</p>
+
 # go-countries
 
 **The ISO 3166-1 country list and the groupings that decide where data is allowed to live.**
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/PlakarKorp/go-countries.svg)](https://pkg.go.dev/github.com/PlakarKorp/go-countries)
 [![Go Report Card](https://goreportcard.com/badge/github.com/PlakarKorp/go-countries)](https://goreportcard.com/report/github.com/PlakarKorp/go-countries)
+[![codecov](https://codecov.io/gh/PlakarKorp/go-countries/branch/main/graph/badge.svg)](https://codecov.io/gh/PlakarKorp/go-countries)
 [![Go](https://github.com/PlakarKorp/go-countries/actions/workflows/go.yml/badge.svg)](https://github.com/PlakarKorp/go-countries/actions/workflows/go.yml)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
@@ -159,6 +164,12 @@ regenerate from a local copy of the CSV when reviewing a data change.
 ```sh
 go test ./...
 ```
+
+CI runs the same tests with `-race`, uploads the coverage profile and the test
+results to [Codecov](https://codecov.io/gh/PlakarKorp/go-countries), and
+regenerates the table from upstream to diff it against the committed file.
+`internal/gen` is excluded from the coverage report: it is a build tool rather
+than shipped code, and the reproducibility check is what actually guards it.
 
 The tests spend most of their effort on the integrity of the generated table
 rather than on the lookup wrappers: that the codes are well-formed and unique,

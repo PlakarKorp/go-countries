@@ -1,0 +1,24 @@
+# The library is a generated data table plus the lookups over it, so coverage
+# is expected to stay near total and a drop is worth a comment on the PR.
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+
+# internal/gen is a build tool, not shipped code. Its own tests cover the
+# parsing and rendering, but main() is flag handling and log.Fatal, and the CI
+# step that regenerates the table and diffs it is the real guard. Counting it
+# alongside the library would only make the number harder to read.
+ignore:
+  - "internal/gen/**"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: true
