@@ -1,0 +1,38 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: vet
+        run: go vet ./...
+
+      - name: test
+        run: go test -race -cover ./...
+
+      - name: data is reproducible
+        run: |
+          curl -sLo /tmp/all.csv https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv
+          python3 internal/gen/gen.py /tmp/all.csv /tmp/countries_data.go
+          gofmt -w /tmp/countries_data.go
+          diff /tmp/countries_data.go countries_data.go
