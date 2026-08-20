@@ -287,7 +287,133 @@ func TestKnownEntries(t *testing.T) {
 			continue
 		}
 		if got != want {
-			t.Errorf("%s = %+v, want %+v", want.Alpha2, got, want)
+			// Country has a String method, so %+v on it would print the
+			// alpha-2 code and hide the field that actually differs.
+			type fields Country
+			t.Errorf("%s = %+v, want %+v", want.Alpha2, fields(got), fields(want))
 		}
+	}
+}
+
+// A country the UN classifies has both a region and a sub-region: the two
+// fields come from the same row, so one arriving without the other means the
+// generation slipped rather than that the data says something interesting.
+func TestRegionAndSubRegionAgreeOnBeingKnown(t *testing.T) {
+	for _, c := range all {
+		if (c.Region == "") != (c.SubRegion == "") {
+			t.Errorf("%s: region %q but sub-region %q", c.Alpha2, c.Region, c.SubRegion)
+		}
+	}
+}
+
+// A sub-region belongs to exactly one region. Nothing in the row format
+// enforces that, so a shifted column would show up here as "Western Europe"
+// turning up under two different regions.
+func TestSubRegionsNestUnderOneRegion(t *testing.T) {
+	parent := make(map[string]Region)
+	for _, c := range all {
+		if c.SubRegion == "" {
+			continue
+		}
+		if got, seen := parent[c.SubRegion]; seen && got != c.Region {
+			t.Errorf("sub-region %q appears under both %q and %q",
+				c.SubRegion, got, c.Region)
+			continue
+		}
+		parent[c.SubRegion] = c.Region
+	}
+	if len(parent) == 0 {
+		t.Fatal("no sub-regions in the table")
+	}
+}
+
+// The five regions partition every classified country, so their sizes have to
+// add up to the table minus the two the UN leaves out. A regeneration that
+// dropped or duplicated rows fails here even when each surviving row is
+// individually well-formed.
+func TestRegionsPartitionTheTable(t *testing.T) {
+	regions := []Region{RegionAfrica, RegionAmericas, RegionAsia, RegionEurope, RegionOceania}
+
+	var total int
+	for _, r := range regions {
+		in := InRegion(r)
+		if len(in) == 0 {
+			t.Errorf("InRegion(%q) is empty", r)
+		}
+		for _, c := range in {
+			if c.Region != r {
+				t.Errorf("%s has region %q in the %q set", c.Alpha2, c.Region, r)
+			}
+		}
+		total += len(in)
+	}
+
+	unclassified := len(filter(func(c Country) bool { return c.Region == "" }))
+	if total+unclassified != len(all) {
+		t.Errorf("regions cover %d + %d unclassified, want %d",
+			total, unclassified, len(all))
+	}
+}
+
+// InSubRegion must return every country of a sub-region and nothing else, so
+// the filter is checked against the table rather than against a spot-check.
+func TestInSubRegionIsExhaustive(t *testing.T) {
+	want := make(map[string][]string)
+	for _, c := range all {
+		if c.SubRegion != "" {
+			want[c.SubRegion] = append(want[c.SubRegion], c.Alpha2)
+		}
+	}
+
+	for sub, codes := range want {
+		got := InSubRegion(sub)
+		if len(got) != len(codes) {
+			t.Errorf("InSubRegion(%q) returned %d, want %d", sub, len(got), len(codes))
+			continue
+		}
+		for i, c := range got {
+			if c.Alpha2 != codes[i] {
+				t.Errorf("InSubRegion(%q)[%d] = %s, want %s", sub, i, c.Alpha2, codes[i])
+			}
+		}
+	}
+}
+
+// Sub-region membership is data, and the counts are what a bad regeneration
+// disturbs. These are the sizes the current ISO/M49 pairing yields; a change
+// is either an ISO revision or an accident, and both want a human to look.
+func TestSubRegionSizes(t *testing.T) {
+	for sub, want := range map[string]int{
+		"Western Europe":   9,
+		"Northern Europe":  16,
+		"Southern Europe":  16,
+		"Eastern Europe":   10,
+		"Northern America": 5,
+	} {
+		if got := len(InSubRegion(sub)); got != want {
+			t.Errorf("%s has %d countries, want %d", sub, got, want)
+		}
+	}
+}
+
+// The EU sits inside Europe with one exception worth naming: Cyprus is a
+// member state that M49 files under Western Asia. A residency rule written as
+// "Europe" rather than "EU" gets Cyprus wrong, so the shape is pinned here.
+func TestEUMembersAreEuropeanExceptCyprus(t *testing.T) {
+	for _, c := range EUMembers() {
+		if c.Region == RegionEurope {
+			continue
+		}
+		if c.Alpha2 == "CY" {
+			continue
+		}
+		t.Errorf("%s is EU but in region %q", c.Alpha2, c.Region)
+	}
+	cy, ok := Get("CY")
+	if !ok {
+		t.Fatal("CY missing")
+	}
+	if !cy.EU || cy.Region != RegionAsia {
+		t.Errorf("CY = {EU:%v Region:%q}, want {true Asia}", cy.EU, cy.Region)
 	}
 }
