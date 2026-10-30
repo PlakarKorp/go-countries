@@ -8,7 +8,6 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/PlakarKorp/go-countries.svg)](https://pkg.go.dev/github.com/PlakarKorp/go-countries)
 [![Go Report Card](https://goreportcard.com/badge/github.com/PlakarKorp/go-countries)](https://goreportcard.com/report/github.com/PlakarKorp/go-countries)
-[![codecov](https://codecov.io/gh/PlakarKorp/go-countries/branch/main/graph/badge.svg)](https://codecov.io/gh/PlakarKorp/go-countries)
 [![Go](https://github.com/PlakarKorp/go-countries/actions/workflows/go.yml/badge.svg)](https://github.com/PlakarKorp/go-countries/actions/workflows/go.yml)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
@@ -166,8 +165,8 @@ go test ./...
 ```
 
 CI runs the same tests with `-race`, uploads the coverage profile and the test
-results to [Codecov](https://codecov.io/gh/PlakarKorp/go-countries), and
-regenerates the table from upstream to diff it against the committed file.
+results to kortex, and regenerates the table from upstream to diff it against
+the committed file.
 `internal/gen` is excluded from the coverage report: it is a build tool rather
 than shipped code, and the reproducibility check is what actually guards it.
 
